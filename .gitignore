@@ -1,0 +1,7 @@
+*/Debug
+*/Generated Files
+*.sdf
+*/*.sdf
+*/*.user
+*/pch.cpp
+*/stdafx.cpp
