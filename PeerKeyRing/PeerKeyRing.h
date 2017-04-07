@@ -20,7 +20,7 @@ extern "C" {
 
     int StorePeerKeys(char* key_file_name, char* password, int nb_peers, peer_key_def* peer_keys);
 
-    int FlushPeerKeys(int nb_peers, peer_key_def* peer_keys);
+    int ClearPeerKeys(int nb_peers, peer_key_def* peer_keys);
 
 #ifdef __cplusplus
 }
