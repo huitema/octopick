@@ -13,5 +13,7 @@
   <ItemGroup>
     <ClCompile Include="OctoPairTest.c" />
     <ClCompile Include="LocalAddressTest.c" />
+    <ClCompile Include="Source.cpp" />
+    <ClCompile Include="KeyRingTest.c" />
   </ItemGroup>
 </Project>

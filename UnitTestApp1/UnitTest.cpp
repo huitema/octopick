@@ -15,5 +15,12 @@ namespace UnitTestApp1
 			int ret = LocalAddressDoTest();
 			Assert::IsTrue(ret == 0);
         }
+
+        TEST_METHOD(KeyRingTest)
+        {
+            // TODO: Your test code here
+            int ret = KeyRingDoTest();
+            Assert::IsTrue(ret == 0);
+        }
     };
 }

@@ -4,6 +4,7 @@ extern "C" {
 #endif
 
 	int LocalAddressDoTest();
+    int KeyRingDoTest();
 
 #ifdef __cplusplus
 }

@@ -1,7 +1,6 @@
 #include <openssl/sha.h>
 #include <openssl/aes.h>
 #include <openssl/rand.h>
-#include <stdio.h>
 
 #include "PeerKeyRing.h"
 
@@ -24,35 +23,35 @@ static int DeriveFileKey(char* password, int repeat_count, unsigned char * salt,
 
 	/* First, hash salt and password */
 
-    r = SHA256_Init(&ctx);
+    r = SHA256_Init(&ctx) ;
 
-	if (r == 0)
+	if (r != 0)
 		r = SHA256_Update(&ctx, (const void*)password, strlen(password));
-    if (r == 0)
+    if (r != 0)
         r = SHA256_Update(&ctx, (const void*)salt, salt_len);
-	if (r == 0)
+	if (r != 0)
 		r = SHA256_Final(hash, &ctx);
 
     /* Then, run the hash N times */
-    for (int i = 0; i < repeat_count && r == 0; i++)
+    for (int i = 0; i < repeat_count && r != 0; i++)
     {
         r = SHA256_Init(&ctx);
 
-        if (r == 0)
+        if (r != 0)
             r = SHA256_Update(&ctx, (const void*)hash, sizeof(hash));
 
-        if (r == 0)
+        if (r != 0)
             r = SHA256_Final(hash, &ctx);
     }
 
     /* Finally, copy the required bytes to the key */
-    if (r == 0)
+    if (r != 0)
     {
         memcpy(key, hash, key_len);
     }
     memset(hash, 0, SHA256_DIGEST_LENGTH);
     memset(&ctx, 0, sizeof(ctx));
-    return r;
+    return (r) ? 0 : -1;
 }
 
 /*
@@ -63,7 +62,7 @@ static int DeriveFileKey(char* password, int repeat_count, unsigned char * salt,
  */
 
 static int DecryptBlob(
-    const unsigned char * key, int key_len, const unsigned char * iv,
+    unsigned char * key, int key_len, const unsigned char * iv,
     unsigned char * encrypted, unsigned char * decrypted, int length)
 {
     AES_KEY aes_key;
@@ -110,11 +109,11 @@ static int EncryptBlob(
     return r;
 }
 
-int OpenPeerKeys(char* key_file_name, char* password, int* nb_peers, peer_key_def** peer_keys)
+int OpenPeerKeys(char* password, peer_key_ring * ring, unsigned char * stored, int stored_length)
 {
     int r = 0;
-    unsigned char salt[PEER_KEY_SALT_LENGTH];
-    unsigned char iv[AES_BLOCK_SIZE];
+    unsigned char * salt; /* [PEER_KEY_SALT_LENGTH]*/
+    unsigned char * iv; /* [AES_BLOCK_SIZE] */
     unsigned char key[PEER_KEY_LENGTH];
     unsigned char * blob = NULL;
     unsigned char * new_blob = NULL;
@@ -122,63 +121,23 @@ int OpenPeerKeys(char* key_file_name, char* password, int* nb_peers, peer_key_de
     unsigned int blob_length = 0;
     unsigned int read_length = 0;
     unsigned char * decrypted_blob = NULL;
-    FILE* F;
 
     /* Initialize return parameters, just in case */
-    *nb_peers = 0;
-    *peer_keys = NULL;
+    ring->nb_peers = 0;
+    ring->nb_peers_max = 0;
+    ring->peers = NULL;
 
-    /* Open the file and read it in memory */
-    F = fopen(key_file_name, "rb");
-    if (F == NULL)
+    /* The "stored" blob contains the password file, read from memory */
+    if (stored_length < PEER_KEY_SALT_LENGTH + AES_BLOCK_SIZE)
     {
         r = EINVAL;
     }
     else
     {
-        if (fread(salt, 1, sizeof(salt), F) != sizeof(salt) ||
-            fread(iv, 1, sizeof(iv), F) != sizeof(iv))
-        {
-            r = EINVAL;
-        }
-        else
-        {
-            blob = (unsigned char *)malloc(1024);
-
-            if (blob == NULL)
-            {
-                r = ENOMEM;
-            }
-            else
-            {
-                blob_alloc = 1024;
-                blob_length = 0;
-
-                for (;;)
-                {
-                    read_length = fread(blob + blob_length, 1, blob_alloc - blob_length, F);
-                    blob_length += read_length;
-                    if (blob_length == blob_alloc)
-                    {
-                        new_blob = (unsigned char *)realloc(blob, 2 * blob_alloc);
-                        if (new_blob == NULL)
-                        {
-                            r = ENOMEM;
-                            break;
-                        }
-                        else
-                        {
-                            blob = new_blob;
-                            blob_alloc = 2 * blob_alloc;
-                        }
-                    }
-                    else if (read_length == 0)
-                    {
-                        break;
-                    }
-                }
-            }
-        }
+        salt = stored;
+        iv = salt + PEER_KEY_SALT_LENGTH;
+        blob = iv + AES_BLOCK_SIZE;
+        blob_length = stored_length - PEER_KEY_SALT_LENGTH - AES_BLOCK_SIZE;
     }
 
     if (r == 0)
@@ -203,8 +162,9 @@ int OpenPeerKeys(char* key_file_name, char* password, int* nb_peers, peer_key_de
                 if (r == 0)
                 {
                     /* Create the peer keys structure */
-                    *nb_peers = blob_length / sizeof(peer_key_def);
-                    peer_keys = (peer_key_def**)decrypted_blob;
+                    ring->nb_peers = blob_length / sizeof(peer_key_def);
+                    ring->nb_peers_max = blob_alloc / sizeof(peer_key_def);
+                    ring->peers = (peer_key_def*)decrypted_blob;
                     /* set the decrypted blob value to NULL, so it will not be deleted later */
                     decrypted_blob = NULL;
                 }
@@ -220,20 +180,15 @@ int OpenPeerKeys(char* key_file_name, char* password, int* nb_peers, peer_key_de
         free(decrypted_blob);
     }
 
-    if (blob != NULL)
-    {
-        free(blob);
-    }
-
     memset(key, 0, sizeof(key));
 
     return r;
 }
 
-int StorePeerKeys(char* key_file_name, char* password, int nb_peers, peer_key_def* peer_keys)
+int StorePeerKeys(char* password, peer_key_ring * ring, char ** stored, int * stored_length)
 {
-    unsigned char salt[PEER_KEY_SALT_LENGTH];
-    unsigned char iv[AES_BLOCK_SIZE];
+    unsigned char * salt; /* [PEER_KEY_SALT_LENGTH] */
+    unsigned char * iv; /* [AES_BLOCK_SIZE] */
     unsigned char key[PEER_KEY_LENGTH];
     int r = 0;
     unsigned int struct_size;
@@ -242,29 +197,54 @@ int StorePeerKeys(char* key_file_name, char* password, int nb_peers, peer_key_de
     unsigned int blob_length;
     unsigned char * blob = NULL;
     unsigned char * encrypted_blob = NULL;
-    FILE* F = NULL;
-    
-    /* Initialize salt and iv to random values */
-    RAND_bytes(salt, 16);
-    RAND_bytes(iv, 16);
+    unsigned char * stored_blob = NULL;
+    unsigned int stored_blob_length = NULL;
+
+    /* intialize return arguments, just in case */
+    *stored = NULL;
+    *stored_length = 0;
 
 
     /* Create a crypt blob from the peer keys structs */
-    struct_size = sizeof(peer_key_def)*nb_peers;
-    extra_bytes = struct_size%AES_BLOCK_SIZE;
-    padding_bytes = (extra_bytes == 0) ? 0 : AES_BLOCK_SIZE - extra_bytes;
+    if (ring->nb_peers == 0)
+    {
+        struct_size = 0;
+        extra_bytes = 0;
+        padding_bytes = AES_BLOCK_SIZE;
+    }
+    else
+    {
+        struct_size = sizeof(peer_key_def)*ring->nb_peers;
+        extra_bytes = struct_size%AES_BLOCK_SIZE;
+        padding_bytes = (extra_bytes == 0) ? 0 : AES_BLOCK_SIZE - extra_bytes;
+    }
+
     blob_length = struct_size + padding_bytes;
     blob = malloc(blob_length);
-    encrypted_blob = malloc(blob_length);
+    stored_blob_length = blob_length + PEER_KEY_SALT_LENGTH + AES_BLOCK_SIZE;
+    stored_blob = malloc(stored_blob_length);
 
-    if (blob == NULL || encrypted_blob == NULL)
+    if (stored_blob == NULL)
     {
         r = ENOMEM;
     }
     else
     {
+        /* Prepare salt and IV in stored blob */
+        salt = stored_blob;
+        iv = salt + PEER_KEY_SALT_LENGTH;
+        encrypted_blob = iv + AES_BLOCK_SIZE;
+
+        /* Initialize salt and iv to random values */
+        RAND_bytes(salt, 16);
+        RAND_bytes(iv, 16);
+
         /* copy the blob and pad */
-        memcpy(blob, peer_keys, struct_size);
+        if (struct_size > 0)
+        {
+            memcpy(blob, ring->peers, struct_size);
+        }
+
         if (padding_bytes != 0)
         {
             memset(&blob[struct_size], 0, padding_bytes);
@@ -275,28 +255,26 @@ int StorePeerKeys(char* key_file_name, char* password, int nb_peers, peer_key_de
         if (r == 0)
         {
             r = EncryptBlob(key, sizeof(key), iv, blob, encrypted_blob, blob_length);
-
-            /* Copy to file */
-            F = fopen(key_file_name, "wb");
-            if (F == NULL)
+            
+            if (r == 0)
             {
-                r = EINVAL;
-            }
-            else
-            {
-                if (fwrite(salt, sizeof(unsigned char), sizeof(salt), F) != sizeof(salt) ||
-                    fwrite(iv, sizeof(unsigned char), sizeof(iv), F) != sizeof(iv) ||
-                    fwrite(encrypted_blob, sizeof(unsigned char), blob_length, F) != blob_length)
-                {
-                    r = EINVAL;
-                }
+                /* Set the return variables */
+                *stored = stored_blob;
+                *stored_length = stored_blob_length;
 
-                (void)fclose(F);
+                /* erase the stored_blob pointer so we will not free it */
+                stored_blob = NULL;
             }
         }
     }
 
     /* Clean up the data and free the blobs before returning */
+
+    if (stored_blob != NULL)
+    {
+        memset(stored_blob, 0, stored_blob_length);
+        free(stored_blob);
+    }
 
     if (blob != NULL)
     {
@@ -304,18 +282,106 @@ int StorePeerKeys(char* key_file_name, char* password, int nb_peers, peer_key_de
         free(blob);
     }
 
-    if (encrypted_blob != NULL)
-    {
-        memset(encrypted_blob, 0, blob_length);
-        free(encrypted_blob);
-    }
-
     memset(key, 0, sizeof(key));
 
     return r;
 }
 
-int FlushPeerKeys()
+int AddPeerToRing(peer_key_ring * ring, char * name, unsigned char * key)
 {
-    int ClearPeerKeys(int nb_peers, peer_key_def* peer_keys);
+    int r = 0;
+    int lname = strlen(name);
+
+    if (lname >= PEER_NAME_LENGTH)
+    {
+        r = EINVAL;
+    }
+    else if (ring->nb_peers >= ring->nb_peers_max)
+    {
+        int new_max = max(ring->nb_peers_max * 2, 8);
+        peer_key_def * new_peers = (peer_key_def *)realloc(ring->peers, new_max * sizeof(peer_key_def));
+
+        if (new_peers == NULL)
+        {
+            r = ENOMEM;
+        }
+        else
+        {
+            ring->nb_peers_max = new_max;
+            ring->peers = new_peers;
+        }
+    }
+
+    if (r == 0)
+    {
+        memcpy(ring->peers[ring->nb_peers].key, key, PEER_KEY_LENGTH);
+        memcpy(ring->peers[ring->nb_peers].name, name, lname);
+        for (int i = lname; i < PEER_NAME_LENGTH; i++)
+        {
+            ring->peers[ring->nb_peers].name[i] = 0;
+        }
+        ring->nb_peers++;
+    }
+    return r;
+}
+
+int FindPeerIndexInRing(peer_key_ring * ring, char * name, unsigned char * key)
+{
+    int found_index = -1;
+
+    for (int i = 0; i < ring->nb_peers; i++)
+    {
+        if ((name == NULL || strcmp(name, ring->peers[i].name) == 0) &&
+            (key == NULL || memcmp(key, ring->peers[i].key, PEER_KEY_LENGTH) == 0))
+        {
+            found_index = i;
+            break;
+        }
+    }
+
+    return found_index;
+}
+
+int DeletePeerAtIndex(peer_key_ring * ring, int peer_index)
+{
+    int r = 0;
+    int nb_minus_1 = ring->nb_peers - 1;
+
+    if (peer_index >=  ring->nb_peers || peer_index < 0)
+    {
+        r = EINVAL;
+    }
+    else
+    {
+        ring->nb_peers--;
+
+        if (peer_index < ring->nb_peers)
+        {
+            memcpy(&ring->peers[peer_index], &ring->peers[ring->nb_peers], sizeof(peer_key_def));
+        }
+
+        memset(&ring->peers[ring->nb_peers], 0, sizeof(peer_key_def));
+    }
+
+    return r;
+}
+
+
+int ClearPeerKeys(peer_key_ring * ring)
+{
+    if (ring->nb_peers > 0)
+    {
+        memset(ring->peers, 0, sizeof(peer_key_def)*ring->nb_peers);
+    }
+
+    if (ring->peers != NULL)
+    {
+        free(ring->peers);
+        ring->peers = NULL;
+    }
+
+    ring->nb_peers = 0;
+    ring->nb_peers_max = 0;
+
+    return 0;
 }
