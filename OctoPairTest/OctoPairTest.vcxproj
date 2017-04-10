@@ -193,6 +193,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Base64Test.c" />
     <ClCompile Include="KeyRingTest.c" />
     <ClCompile Include="LocalAddressTest.c" />
     <ClCompile Include="OctoPairTest.c" />

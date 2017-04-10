@@ -5,6 +5,7 @@ extern "C" {
 
 	int LocalAddressDoTest();
     int KeyRingDoTest();
+    int Base64DoTest();
 
 #ifdef __cplusplus
 }

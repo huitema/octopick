@@ -22,5 +22,12 @@ namespace UnitTestApp1
             int ret = KeyRingDoTest();
             Assert::IsTrue(ret == 0);
         }
+
+        TEST_METHOD(Base64Test)
+        {
+            // TODO: Your test code here
+            int ret = Base64DoTest();
+            Assert::IsTrue(ret == 0);
+        }
     };
 }

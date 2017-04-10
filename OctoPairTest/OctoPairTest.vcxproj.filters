@@ -15,5 +15,6 @@
     <ClCompile Include="LocalAddressTest.c" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="KeyRingTest.c" />
+    <ClCompile Include="Base64Test.c" />
   </ItemGroup>
 </Project>
