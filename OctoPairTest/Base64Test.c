@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include "../OctoPair/ObfuscatedId.h"
+#include "../OctoPair/PeerKeyRing.h"
 
 /*
  * Base64 test vectors from RFC 4648

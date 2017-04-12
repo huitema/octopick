@@ -11,13 +11,13 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="LocalAddress.h" />
     <ClInclude Include="PeerKeyRing.h" />
-    <ClInclude Include="ObfuscatedId.h" />
+    <ClInclude Include="Base64.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OctoPair.c" />
     <ClCompile Include="mdnsPublish.c" />
     <ClCompile Include="LocalAddress.c" />
     <ClCompile Include="PeerKeyRing.c" />
-    <ClCompile Include="ObfuscatedId.c" />
+    <ClCompile Include="Base64.c" />
   </ItemGroup>
 </Project>

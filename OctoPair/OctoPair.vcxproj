@@ -189,8 +189,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Base64.h" />
     <ClInclude Include="LocalAddress.h" />
-    <ClInclude Include="ObfuscatedId.h" />
     <ClInclude Include="OctoPair.h" />
     <ClInclude Include="PeerKeyRing.h" />
     <ClInclude Include="targetver.h" />
@@ -198,7 +198,7 @@
   <ItemGroup>
     <ClCompile Include="LocalAddress.c" />
     <ClCompile Include="mdnsPublish.c" />
-    <ClCompile Include="ObfuscatedId.c" />
+    <ClCompile Include="Base64.c" />
     <ClCompile Include="OctoPair.c" />
     <ClCompile Include="PeerKeyRing.c" />
   </ItemGroup>
