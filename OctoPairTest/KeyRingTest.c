@@ -48,6 +48,45 @@ static int RingCompare(peer_key_ring * ring1, peer_key_ring * ring2)
     return r;
 }
 
+static char * bad_id[] = {
+    "000000000000", "00000000000$", "", "EjRUBdmYHoqx", "EjRVBdmZHoqx", "EjRVBdmYHoqy", "EjRVAdmYHoqx"
+};
+
+static int nb_bad_id = sizeof(bad_id) / sizeof(char*);
+
+static int hash_ring_test(peer_key_ring *ring)
+{
+    char * p_id;
+    int p;
+    int r = 0;
+
+    for (int i = 0; r == 0 && i < ring->nb_peers; i++)
+    {
+        for (int j = 0; r == 0 && j < 2; j++)
+        {
+            p_id = ring->list[j].text_buffer + PEER_OBFUSCATED_ID_MEM_LENGTH*i;
+
+            p = RetrievePeerKeyIndex(ring, p_id);
+
+            if (p != i)
+            {
+                r = -1;
+            }
+        }
+    }
+
+    for (int i = 0; r == 0 && i < nb_bad_id; i++)
+    {
+        p = RetrievePeerKeyIndex(ring, bad_id[i]);
+
+        if (p >= 0)
+        {
+            r = -1;
+        }
+    }
+
+    return r;
+}
 
 int KeyRingDoTest()
 {
@@ -55,15 +94,14 @@ int KeyRingDoTest()
     peer_key_ring ring, ring2;
     unsigned char * stored = NULL;
     unsigned int stored_length = 0;
+    int time_0 = 0x12345678;
+    int time_x;
     int r = 0;
 
     /* Start with an empty key ring */
-    ring.nb_peers = 0;
-    ring.nb_peers_max = 0;
-    ring.peers = NULL;
-    ring2.nb_peers = 0;
-    ring2.nb_peers_max = 0;
-    ring2.peers = NULL;
+    InitializeKeyRing(&ring);
+    InitializeKeyRing(&ring2);
+
 
     // Test a dozen additions, enough to trigger 1 realloc
     for (int i = 0; i < 12 && r == 0; i++)
@@ -86,6 +124,23 @@ int KeyRingDoTest()
         {
             r = RingCompare(&ring, &ring2);
         }
+    }
+
+    /* Test the hash update by incrementing the current time several times. */
+    time_x = time_0;
+    for (int i=0; r == 0 && i < 4; i++)
+    {
+        /* initialize the hash table for the ring */
+
+        r = UpdateIdListsInKeyRing(&ring, time_0, 0);
+
+        if (r == 0)
+        {
+            /* check that we can retrieve the hashes of the peers */
+
+            r = hash_ring_test(&ring);
+        }
+        time_x += 128;
     }
 
     ClearPeerKeys(&ring);

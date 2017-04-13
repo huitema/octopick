@@ -28,7 +28,7 @@ typedef struct _peer_id_list {
 
     unsigned char time_based_nonce[3];
 
-    char ** peer_id;
+    // char ** peer_id;
 } peer_id_list;
 
 typedef struct _peer_key_ring
@@ -52,7 +52,9 @@ int FindPeerIndexInRing(peer_key_ring * ring, char * name, unsigned char * key);
 
 int DeletePeerAtIndex(peer_key_ring * ring, int peer_index);
 
-int ClearPeerKeys(peer_key_ring * ring);
+void InitializeKeyRing(peer_key_ring * ring);
+
+void ClearPeerKeys(peer_key_ring * ring);
 
 /*
  * Compute binary obfuscated ID from nonce and key
@@ -85,15 +87,22 @@ int CreateDnssdPrivacyId(int time24, unsigned char * key, int key_len, char * id
 int UpdateIdListFromKeyRing(peer_key_ring * ring, int time24, peer_id_list * peer_list);
 
 /*
-* Create or update the ID required for the peer keys in the ring
-* and the current time.
-* We assume that the time precision is better than a minute, and
-* we create 24 bit nonces (current_time >> 8). Given that, there
-* might be a need at any time for at most 2 list of ID.
-*
-* Todo: this should be under lock, so the ring is only updated once!
+ * Create or update the ID required for the peer keys in the ring
+ * and the current time.
+ * We assume that the time precision is better than a minute, and
+ * we create 24 bit nonces (current_time >> 8). Given that, there
+ * might be a need at any time for at most 2 list of ID.
+ *
+ * Todo: this should be under lock, so the ring is only updated once!
+ */
+int UpdateIdListsInKeyRing(peer_key_ring * ring, unsigned int current_time, int force);
+
+/*
+* Check whether a given ID is present in the hash table.
+* Return the index ID or the value -1 if failure
 */
-int UpdateIdListsInKeyRing(peer_key_ring * ring, unsigned int current_time, peer_id_list * id_list);
+
+int RetrievePeerKeyIndex(peer_key_ring * ring, char * id);
 
 #ifdef __cplusplus
 }

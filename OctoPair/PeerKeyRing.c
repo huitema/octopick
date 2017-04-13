@@ -1,7 +1,7 @@
 #include <openssl/sha.h>
 #include <openssl/aes.h>
 #include <openssl/rand.h>
-
+#include "Base64.h"
 #include "PeerKeyRing.h"
 
 /*
@@ -74,7 +74,7 @@ static int DecryptBlob(
     if (r == 0)
     {
         memcpy(ivx, iv, AES_BLOCK_SIZE);
-        AES_cbc_encrypt(encrypted, decrypted, length, &aes_key, iv, AES_DECRYPT);
+        AES_cbc_encrypt(encrypted, decrypted, length, &aes_key, ivx, AES_DECRYPT);
 
         memset(&aes_key, 0, sizeof(aes_key));
     }
@@ -198,7 +198,7 @@ int StorePeerKeys(char* password, peer_key_ring * ring, char ** stored, int * st
     unsigned char * blob = NULL;
     unsigned char * encrypted_blob = NULL;
     unsigned char * stored_blob = NULL;
-    unsigned int stored_blob_length = NULL;
+    unsigned int stored_blob_length = 0;
 
     /* intialize return arguments, just in case */
     *stored = NULL;
@@ -366,8 +366,25 @@ int DeletePeerAtIndex(peer_key_ring * ring, int peer_index)
     return r;
 }
 
+void InitializeKeyRing(peer_key_ring * ring)
+{
 
-int ClearPeerKeys(peer_key_ring * ring)
+    ring->nb_peers = 0;
+    ring->nb_peers_max = 0;
+    ring->peers = NULL;
+    ring->current_list_index = 0;
+    for (int i = 0; i < 2; i++)
+    {
+        ring->list[i].nb_peers = 0;
+        ring->list[i].text_buffer = NULL;
+        ring->list[i].text_buffer_size = 0;
+        ring->list[i].time24 = -1;
+    }
+    ring->hash_table_size = 0;
+    ring->hash_table = NULL;
+}
+
+void ClearPeerKeys(peer_key_ring * ring)
 {
     if (ring->nb_peers > 0)
     {
@@ -383,7 +400,23 @@ int ClearPeerKeys(peer_key_ring * ring)
     ring->nb_peers = 0;
     ring->nb_peers_max = 0;
 
-    return 0;
+    for (int i = 0; i < 2; i++)
+    {
+        if (ring->list[i].text_buffer != NULL)
+        {
+            free(ring->list[i].text_buffer);
+        }
+        ring->list[i].nb_peers = 0;
+        ring->list[i].text_buffer = NULL;
+        ring->list[i].text_buffer_size = 0;
+        ring->list[i].time24 = -1;
+    }
+    if (ring->hash_table == NULL)
+    {
+        free(ring->hash_table);
+    }
+    ring->hash_table_size = 0;
+    ring->hash_table = NULL;
 }
 
 /*
@@ -436,13 +469,13 @@ int CreateObfuscatedBase64Id(unsigned char * nonce, int nonce_len, unsigned char
     int id_len, char * base64_id)
 {
     unsigned char binaryId[128];
-    int r;
+    int r = 0;
 
     if (id_len > sizeof(binaryId))
     {
         r = -1;
     }
-    else if (r = CreateObfuscatedBinaryId(nonce, nonce_len, key, key_len, binaryId, id_len) == 0)
+    else if ((r = CreateObfuscatedBinaryId(nonce, nonce_len, key, key_len, binaryId, id_len)) == 0)
     {
         Base64Encode(binaryId, id_len, base64_id);
     }
@@ -600,15 +633,22 @@ static int insert_hash_list(peer_key_ring * ring, int list_rank)
  * Todo: this should be under lock, so the ring is only updated once!
  */
 
-int UpdateIdListsInKeyRing(peer_key_ring * ring, unsigned int current_time, peer_id_list * id_list)
+int UpdateIdListsInKeyRing(peer_key_ring * ring, unsigned int current_time, int force)
 {
     /* Compare 2 versions of time, now and now plus 128 seconds */
     int r = 0;
     int time24_current = (current_time >> 8) & 0xFFFFFF;
-    int time24_next = ((current_time + 128) >> 8) & 0xFFFFFF;
+    int time24_alt = ((current_time + 128) >> 8) & 0xFFFFFF;
     int alt_index;
     int something_changed = 0;
     int min_hash_size;
+    int recompute_current = force;
+    int recompute_alt = force;
+
+    if (time24_alt == time24_current)
+    {
+        time24_alt = (time24_current - 1)&0xFFFFFF;
+    }
 
     if (ring->list[ring->current_list_index].time24 != time24_current)
     {
@@ -616,23 +656,28 @@ int UpdateIdListsInKeyRing(peer_key_ring * ring, unsigned int current_time, peer
         ring->current_list_index ^= 1;
         if (ring->list[ring->current_list_index].time24 != time24_current)
         {
-            /* Was not computed before, so we need to do it now. */
-            something_changed = 1;
-            r = UpdateIdListFromKeyRing(ring, time24_current, &ring->list[ring->current_list_index]);
+            recompute_current = 1;
         }
     }
 
-    if (time24_next != time24_current)
-    {
-        /* Need to prepare the future index */
-        alt_index = ring->current_list_index^1;
+    alt_index = ring->current_list_index ^ 1;
 
-        if (ring->list[alt_index].time24 != time24_current)
-        {
-            /* Was not computed before, so we need to do it now. */
-            something_changed = 1;
-            r = UpdateIdListFromKeyRing(ring, time24_next, &ring->list[alt_index]);
-        }
+    if (ring->list[alt_index].time24 != time24_alt)
+    {
+        recompute_alt = 1;
+    }
+
+    if (recompute_current != 0)
+    {
+        something_changed = 1;
+        r = UpdateIdListFromKeyRing(ring, time24_current, &ring->list[ring->current_list_index]);
+    }
+
+    if (r == 0 && recompute_alt != 0)
+    {
+        /* Was not computed before, so we need to do it now. */
+        something_changed = 1;
+        r = UpdateIdListFromKeyRing(ring, time24_alt, &ring->list[alt_index]);
     }
 
     if (r == 0 && (something_changed || ring->hash_table == 0))
@@ -673,4 +718,58 @@ int UpdateIdListsInKeyRing(peer_key_ring * ring, unsigned int current_time, peer
     }
 
     return r;
+}
+
+/*
+ * Check whether a given ID is present in the hash table.
+ * Return the index ID or the value -1 if failure
+ */
+
+int RetrievePeerKeyIndex(peer_key_ring * ring, char * id)
+{
+    int hash = base64_to_hash(id);
+    int hash_index;
+    int v = -1;
+    int x, l, p;
+    char * p_id;
+
+    /* negative hash values correspond to invalid Base64 encodings */
+    if (hash >= 0)
+    {
+        hash_index = hash%ring->hash_table_size;
+
+        for (int i = 0; i < ring->hash_table_size; i++)
+        {
+            if ((x = ring->hash_table[hash_index]) == -1)
+            {
+                /* found a hole, which means the hash is not there */
+                break;
+            }
+            else
+            {
+                l = x / ring->nb_peers;
+                p = x % ring->nb_peers;
+                if (l <= 1 && p < ring->list[i].nb_peers)
+                {
+                    p_id = ring->list[l].text_buffer + PEER_OBFUSCATED_ID_MEM_LENGTH * p;
+
+                    if (strcmp(id, p_id) == 0)
+                    {
+                        /* found the desired peer in the ring */
+                        v = p;
+                        break;
+                    }
+                }
+                /* did not find an index here */
+                hash_index++;
+
+                if (hash_index > ring->hash_table_size)
+                {
+                    hash_index = 0;
+                }
+            }
+        }
+    }
+
+    return v;
 }
