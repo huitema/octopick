@@ -775,7 +775,9 @@ int ComposeAllPeerQueries(peer_discovery_context * context, unsigned char * quer
         /* For all other peers */
         for (int i = 1; i < context->ring->nb_peers; i++)
         {
-            position = ComposeSinglePeerQuery(name_list, PEER_OBFUSCATED_ID_STR_LENGTH,
+            position = ComposeSinglePeerQuery(
+                name_list + PEER_OBFUSCATED_ID_MEM_LENGTH*i,
+                PEER_OBFUSCATED_ID_STR_LENGTH,
                 name_pointer, 2,
                 query, query_max, position);
         }

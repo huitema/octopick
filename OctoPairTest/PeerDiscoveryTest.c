@@ -277,8 +277,8 @@ int PeerDiscoveryPairingTest(peer_discovery_context * contexts,
 
 
 /*
-* Test of the presence sequence
-*/
+ * Test of the presence sequence
+ */
 int PeerDiscoveryPresenceTest(peer_discovery_context * contexts,
     unsigned char * query, int query_max,
     unsigned char * response, int response_max)
@@ -399,8 +399,75 @@ int PeerDiscoveryPresenceTest(peer_discovery_context * contexts,
     return r;
 }
 
+/*
+* Test of the direct presence request
+*/
+int PeerDiscoveryDirectPresenceTest(peer_discovery_context * contexts,
+    unsigned char * query, int query_max,
+    unsigned char * response, int response_max)
+{
+    int r = 0;
+    int query_length = 0;
+    int response_length = 0;
+    unsigned char name[256];
+    int name_length = 0;
+    int found_peer_index = 0;
+    int position = 0;
 
+    r = CreatePeerDiscoveryRequest(&contexts[0], PEER_MDNS_PEER, DNS_RRTYPE_SRV,
+        NULL, 0, query, query_max, &query_length);
 
+    if (r == 0)
+    {
+        r = PeerDiscoveryTestCheckMessage(query, query_length, 0, TEST_PEER_DISCOVERY_NB_PEERS, 0);
+    }
+
+    if (r == 0)
+    {
+        r = ProcessIncomingPeerDiscoveryRequest(&contexts[1], query, query_length, 1,
+            response, response_max, &response_length);
+    }
+
+    if (r == 0)
+    {
+        r = PeerDiscoveryTestCheckMessage(response, response_length, 1, 0, 1);
+    }
+
+    if (r == 0)
+    {
+        /* get the name in the SRV answer */
+        r = PeerDiscoveryTestNameFromSrv(response, response_length, 12,
+            name, 256, &name_length);
+    }
+
+    if (r == 0)
+    {
+        /* compose an SRV request from that name */
+        CreatePeerDiscoveryRequest(&contexts[0], PEER_MDNS_HOST, DNS_RRTYPE_AAAA,
+            name, name_length, query, query_max, &query_length);
+    }
+
+    if (r == 0)
+    {
+        /* check the query message */
+        r = PeerDiscoveryTestCheckMessage(query, query_length, 0, 1, 0);
+    }
+
+    if (r == 0)
+    {
+        /* obtain the response */
+        r = ProcessIncomingPeerDiscoveryRequest(&contexts[1], query, query_length, 1,
+            response, response_max, &response_length);
+    }
+
+    if (r == 0)
+    {
+        /* check the response */
+        r = PeerDiscoveryTestCheckMessage(response, response_length, 1, 0, 1);
+    }
+
+    return r;
+}
 
 int PeerDiscoveryDoTest()
 {
@@ -472,6 +539,17 @@ int PeerDiscoveryDoTest()
         r = PeerDiscoveryPresenceTest(context, buffers[0], TEST_PEER_DISCOVERY_BUFFER_LENGTH,
             buffers[1], TEST_PEER_DISCOVERY_BUFFER_LENGTH);
     }
+
+
+    /*
+    * Test of the direct presence query
+    */
+    if (r == 0)
+    {
+        r = PeerDiscoveryDirectPresenceTest(context, buffers[0], TEST_PEER_DISCOVERY_BUFFER_LENGTH,
+            buffers[1], TEST_PEER_DISCOVERY_BUFFER_LENGTH);
+    }
+
     /*
      * Clean up the memory allocations
      */
