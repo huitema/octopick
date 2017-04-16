@@ -190,6 +190,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="OctoPairTest.h" />
+    <ClInclude Include="OctoPairTestUtil.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
@@ -197,6 +198,7 @@
     <ClCompile Include="KeyRingTest.c" />
     <ClCompile Include="LocalAddressTest.c" />
     <ClCompile Include="OctoPairTest.c" />
+    <ClCompile Include="PeerDiscoveryTest.c" />
     <ClCompile Include="Source.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

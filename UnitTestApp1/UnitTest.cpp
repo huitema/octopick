@@ -11,22 +11,25 @@ namespace UnitTestApp1
     public:
         TEST_METHOD(LocalAddressTest)
         {
-            // TODO: Your test code here
 			int ret = LocalAddressDoTest();
 			Assert::IsTrue(ret == 0);
         }
 
         TEST_METHOD(KeyRingTest)
         {
-            // TODO: Your test code here
             int ret = KeyRingDoTest();
             Assert::IsTrue(ret == 0);
         }
 
         TEST_METHOD(Base64Test)
         {
-            // TODO: Your test code here
             int ret = Base64DoTest();
+            Assert::IsTrue(ret == 0);
+        }
+
+        TEST_METHOD(PeerDiscoveryTest)
+        {
+            int ret = PeerDiscoveryDoTest();
             Assert::IsTrue(ret == 0);
         }
     };

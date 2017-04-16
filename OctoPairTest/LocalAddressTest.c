@@ -5,7 +5,7 @@
 #include <ws2tcpip.h>
 #include "../OctoPair/LocalAddress.h"
 
-struct in6_addr mdns_mcast6 = {
+static struct in6_addr mdns_mcast6 = {
 	{ 0xFF, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xFB }
 };
 

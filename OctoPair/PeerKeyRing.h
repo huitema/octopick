@@ -102,7 +102,7 @@ int UpdateIdListsInKeyRing(peer_key_ring * ring, unsigned int current_time, int 
 * Return the index ID or the value -1 if failure
 */
 
-int RetrievePeerKeyIndex(peer_key_ring * ring, char * id);
+int RetrievePeerKeyIndex(peer_key_ring * ring, char * id, int id_length);
 
 #ifdef __cplusplus
 }

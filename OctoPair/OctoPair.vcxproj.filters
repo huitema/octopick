@@ -12,6 +12,7 @@
     <ClInclude Include="LocalAddress.h" />
     <ClInclude Include="PeerKeyRing.h" />
     <ClInclude Include="Base64.h" />
+    <ClInclude Include="PeerDiscovery.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OctoPair.c" />
@@ -19,5 +20,6 @@
     <ClCompile Include="LocalAddress.c" />
     <ClCompile Include="PeerKeyRing.c" />
     <ClCompile Include="Base64.c" />
+    <ClCompile Include="PeerDiscovery.c" />
   </ItemGroup>
 </Project>

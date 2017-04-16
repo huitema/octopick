@@ -567,10 +567,10 @@ int UpdateIdListFromKeyRing(peer_key_ring * ring, int time24, peer_id_list * id_
  * Insert an entry in the hash table.
  * In case of collision, just pick the next entry in the table.
  */
-static int insert_hash_value(int * hash_table, int hash_table_size, char * id, int v)
+static int insert_hash_value(int * hash_table, int hash_table_size, char * id, int id_length, int v)
 {
     int r = 0;
-    int hash = base64_to_hash(id);
+    int hash = base64_n_to_hash(id, id_length);
     int hash_index;
 
     if (hash < 0)
@@ -617,7 +617,7 @@ static int insert_hash_list(peer_key_ring * ring, int list_rank)
 
     for (int i = 0; r == 0 && i < ring->list[list_rank].nb_peers; i++, id += PEER_OBFUSCATED_ID_MEM_LENGTH)
     {
-        r = insert_hash_value(ring->hash_table, ring->hash_table_size, id, index_rank + i);
+        r = insert_hash_value(ring->hash_table, ring->hash_table_size, id, PEER_OBFUSCATED_ID_STR_LENGTH, index_rank + i);
     }
 
     return r;
@@ -725,9 +725,9 @@ int UpdateIdListsInKeyRing(peer_key_ring * ring, unsigned int current_time, int 
  * Return the index ID or the value -1 if failure
  */
 
-int RetrievePeerKeyIndex(peer_key_ring * ring, char * id)
+int RetrievePeerKeyIndex(peer_key_ring * ring, char * id, int id_len)
 {
-    int hash = base64_to_hash(id);
+    int hash = base64_n_to_hash(id, id_len);
     int hash_index;
     int v = -1;
     int x, l, p;

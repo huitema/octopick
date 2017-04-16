@@ -1,16 +1,17 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "../OctoPair/PeerKeyRing.h"
 
-static int TestAddPeer(peer_key_ring * ring)
+int TestAddPeerToKeyRing(peer_key_ring * ring, int peer_id)
 {
     char name[PEER_NAME_LENGTH];
     char key[PEER_KEY_LENGTH];
     int r = 0;
-    int n0 = (ring->nb_peers) / 10;
+    int n0 = (peer_id) / 10;
     int n1 = n0 / 10;
     int n2 = n0 % 10;
-    int n3 = (ring->nb_peers) % 10;
+    int n3 = (peer_id) % 10;
 
 
     name[0] = 'P';
@@ -24,7 +25,7 @@ static int TestAddPeer(peer_key_ring * ring)
 
     for (int i = 0; i < PEER_KEY_LENGTH; i++)
     {
-        key[i] = (unsigned char)((ring->nb_peers << 2) + i);
+        key[i] = (unsigned char)((peer_id << 2) + i);
     }
 
     r = AddPeerToRing(ring, name, key);
@@ -66,7 +67,7 @@ static int hash_ring_test(peer_key_ring *ring)
         {
             p_id = ring->list[j].text_buffer + PEER_OBFUSCATED_ID_MEM_LENGTH*i;
 
-            p = RetrievePeerKeyIndex(ring, p_id);
+            p = RetrievePeerKeyIndex(ring, p_id, PEER_OBFUSCATED_ID_STR_LENGTH);
 
             if (p != i)
             {
@@ -77,7 +78,7 @@ static int hash_ring_test(peer_key_ring *ring)
 
     for (int i = 0; r == 0 && i < nb_bad_id; i++)
     {
-        p = RetrievePeerKeyIndex(ring, bad_id[i]);
+        p = RetrievePeerKeyIndex(ring, bad_id[i], strlen(bad_id[i]));
 
         if (p >= 0)
         {
@@ -106,7 +107,7 @@ int KeyRingDoTest()
     // Test a dozen additions, enough to trigger 1 realloc
     for (int i = 0; i < 12 && r == 0; i++)
     {
-        r= TestAddPeer(&ring);
+        r= TestAddPeerToKeyRing(&ring, ring.nb_peers);
     }
 
     /* save the ring on file */

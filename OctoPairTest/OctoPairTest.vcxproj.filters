@@ -9,6 +9,7 @@
   <ItemGroup>
     <ClInclude Include="OctoPairTest.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="OctoPairTestUtil.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OctoPairTest.c" />
@@ -16,5 +17,6 @@
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="KeyRingTest.c" />
     <ClCompile Include="Base64Test.c" />
+    <ClCompile Include="PeerDiscoveryTest.c" />
   </ItemGroup>
 </Project>

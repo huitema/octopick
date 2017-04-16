@@ -190,6 +190,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Base64.h" />
+    <ClInclude Include="PeerDiscovery.h" />
     <ClInclude Include="LocalAddress.h" />
     <ClInclude Include="OctoPair.h" />
     <ClInclude Include="PeerKeyRing.h" />
@@ -200,6 +201,7 @@
     <ClCompile Include="mdnsPublish.c" />
     <ClCompile Include="Base64.c" />
     <ClCompile Include="OctoPair.c" />
+    <ClCompile Include="PeerDiscovery.c" />
     <ClCompile Include="PeerKeyRing.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

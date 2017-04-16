@@ -129,3 +129,47 @@ int base64_to_hash(char * base64_text)
     return hash;
 }
 
+/*
+* returns a positive or null integer if the encoding is valid, -1 if it is not
+*/
+int base64_n_to_hash(char * base64_text, int base64_length)
+{
+    int hash = 0;
+    int i = 0;
+    int c;
+    int v;
+    int overflow;
+
+    if ((base64_length % 4) != 0)
+    {
+        /* Not a valid base 64 encoding */
+        hash = -1;
+    }
+    else
+    {
+        for (int i = 0; i < base64_length; i++)
+        {
+            c = base64_text[i];
+            if (c < 0 || c > 127)
+            {
+                hash = -1;
+                break;
+            }
+            else if ((v = base64_values[c]) < 0)
+            {
+                /* TODO: consider the termination cases =  and == */
+                hash = -1;
+                break;
+            }
+            else
+            {
+                overflow = hash >> 25;
+                hash = (((hash & 0x1FFFFFF) << 6) | v) ^ (overflow << 16) ^ overflow;
+            }
+
+            i++;
+        }
+    }
+
+    return hash;
+}
