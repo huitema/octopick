@@ -341,7 +341,7 @@ static int ProcessMdnsNameAndRtype(peer_discovery_context * context,
                 name_length - PEER_DISCOVERY_HOSTNAME_LENGTH - 1,
                 pairing_tcp_local, sizeof(pairing_tcp_local)) == 0)
         {
-            r = PEER_MDNS_PAIRING_HOST;
+            r = PEER_MDNS_SRV_HOST;
         }
         else if (rtype == DNS_RRTYPE_AAAA &&
             CompareName(name + PEER_DISCOVERY_HOSTNAME_LENGTH + 1,
@@ -362,7 +362,7 @@ static int ProcessMdnsNameAndRtype(peer_discovery_context * context,
 
         if (*peer_index >= 0)
         {
-            r = PEER_MDNS_PEER;            
+            r = PEER_MDNS_SRV_HOST;
         }
     }
 
@@ -640,7 +640,7 @@ int ProcessIncomingPeerDiscoveryRequest(peer_discovery_context * context,
                             &nb_answers_in_batch);
                         nb_answers_in_response += nb_answers_in_batch;
                         break;
-                    case PEER_MDNS_PAIRING_HOST:
+                    case PEER_MDNS_SRV_HOST:
                         /* No need to check suppression, this is authoritative */
                         if (rtype == DNS_RRTYPE_SRV)
                         {
@@ -803,7 +803,7 @@ int CreatePeerDiscoveryRequest(peer_discovery_context * context,
         /* Create simple query for _pds._tcp._local. Name is ignored. */
         position = ComposeQuery(DNS_RRTYPE_PTR, pds_tcp_local, sizeof(pds_tcp_local), query, query_max, position);
         break;
-    case PEER_MDNS_PAIRING_HOST:
+    case PEER_MDNS_SRV_HOST:
         /* Create SRV query for selected name */
         position = ComposeQuery(DNS_RRTYPE_SRV, name, name_length, query, query_max, position);
         break;

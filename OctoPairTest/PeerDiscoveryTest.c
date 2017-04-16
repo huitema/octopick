@@ -44,14 +44,6 @@ int CreateTwoKeyRingsWithOneOverlap(peer_key_ring * ring1, peer_key_ring * ring2
     return r;
 }
 
-static int query_type_list[] = {
-    PEER_MDNS_PAIRING,
-    PEER_MDNS_PRESENCE,
-    PEER_MDNS_PAIRING_HOST,
-    PEER_MDNS_HOST,
-    PEER_MDNS_PEER
-};
-
 /*
  * Basic message verification
  */
@@ -223,7 +215,7 @@ int PeerDiscoveryPairingTest(peer_discovery_context * contexts,
     if (r == 0)
     {
         /* compose an SRV request from that name */
-        r = CreatePeerDiscoveryRequest(&contexts[0], PEER_MDNS_PAIRING_HOST, DNS_RRTYPE_SRV,
+        r = CreatePeerDiscoveryRequest(&contexts[0], PEER_MDNS_SRV_HOST, DNS_RRTYPE_SRV,
             name, name_length, query, query_max, &query_length);
     }
 
@@ -347,7 +339,7 @@ int PeerDiscoveryPresenceTest(peer_discovery_context * contexts,
     if (r == 0)
     {
         /* compose an SRV request from that name */
-        r = CreatePeerDiscoveryRequest(&contexts[0], PEER_MDNS_PEER, DNS_RRTYPE_SRV,
+        r = CreatePeerDiscoveryRequest(&contexts[0], PEER_MDNS_SRV_HOST, DNS_RRTYPE_SRV,
             name, name_length, query, query_max, &query_length);
     }
 

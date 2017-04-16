@@ -734,7 +734,8 @@ int RetrievePeerKeyIndex(peer_key_ring * ring, char * id, int id_len)
     char * p_id;
 
     /* negative hash values correspond to invalid Base64 encodings */
-    if (hash >= 0)
+
+    if (id_len == PEER_OBFUSCATED_ID_STR_LENGTH && hash >= 0)
     {
         hash_index = hash%ring->hash_table_size;
 
@@ -753,7 +754,7 @@ int RetrievePeerKeyIndex(peer_key_ring * ring, char * id, int id_len)
                 {
                     p_id = ring->list[l].text_buffer + PEER_OBFUSCATED_ID_MEM_LENGTH * p;
 
-                    if (strcmp(id, p_id) == 0)
+                    if (memcmp(id, p_id, PEER_OBFUSCATED_ID_STR_LENGTH) == 0)
                     {
                         /* found the desired peer in the ring */
                         v = p;

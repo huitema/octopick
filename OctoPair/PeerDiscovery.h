@@ -16,7 +16,7 @@ extern "C" {
 
 #define PEER_MDNS_PAIRING 1
 #define PEER_MDNS_PRESENCE 2
-#define PEER_MDNS_PAIRING_HOST 3
+#define PEER_MDNS_SRV_HOST 3
 #define PEER_MDNS_HOST 4
 #define PEER_MDNS_PEER 5
 
