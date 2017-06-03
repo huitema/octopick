@@ -12,7 +12,8 @@ extern "C" {
 	int LocalAddressDoTest();
     int KeyRingDoTest();
     int Base64DoTest();
-    int PeerDiscoveryDoTest();
+    int PeerDiscoveryDoTest(); 
+    int DhGenDoTest();
 
 #ifdef __cplusplus
 }

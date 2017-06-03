@@ -32,5 +32,11 @@ namespace UnitTestApp1
             int ret = PeerDiscoveryDoTest();
             Assert::IsTrue(ret == 0);
         }
+
+        TEST_METHOD(DhGenTest)
+        {
+            int ret = DhGenDoTest();
+            Assert::IsTrue(ret == 0);
+        }
     };
 }

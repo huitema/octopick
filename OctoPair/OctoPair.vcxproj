@@ -194,6 +194,7 @@
     <ClInclude Include="LocalAddress.h" />
     <ClInclude Include="OctoPair.h" />
     <ClInclude Include="PeerKeyRing.h" />
+    <ClInclude Include="sslconnect.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
@@ -203,6 +204,7 @@
     <ClCompile Include="OctoPair.c" />
     <ClCompile Include="PeerDiscovery.c" />
     <ClCompile Include="PeerKeyRing.c" />
+    <ClCompile Include="sslconnect.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

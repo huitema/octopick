@@ -18,5 +18,6 @@
     <ClCompile Include="KeyRingTest.c" />
     <ClCompile Include="Base64Test.c" />
     <ClCompile Include="PeerDiscoveryTest.c" />
+    <ClCompile Include="dhGenTest.c" />
   </ItemGroup>
 </Project>

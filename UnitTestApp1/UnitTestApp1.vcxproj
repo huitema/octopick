@@ -121,7 +121,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(OutDir)..\OctoPairTest\;$(OutDir)..\OctoPair\;$(SolutionDir)\$(Configuration)\;C:\Users\Christian\Documents\GitHub\OpenSslMs\vsout\NT-Universal-10.0-Static-Unicode\Debug\Win32\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>OctoPairTest.lib;OctoPair.lib;libeay32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>OctoPairTest.lib;OctoPair.lib;ssleay32.lib;libeay32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
